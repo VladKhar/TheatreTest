@@ -1,0 +1,156 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Theatre 0.1</title>
+    <style type="text/css">
+        td.numbers {
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+
+    <table id="spectaclesTable">
+        <thead>
+        <tr>
+            <th data-header-name="id">Id</th>
+            <th data-header-name="name">Name</th>
+            <th data-header-name="time">Time</th>
+            <th data-header-name="tickets">Tickets</th>
+        </tr>
+        </thead>
+        <tbody>
+        </tbody>
+        <tfoot>
+            <tr>
+                <th><input type="hidden" name="id" ></th>
+                <th><input type="text" name="name" ></th>
+                <th><input type="text" name="time" ></th>
+                <th><input type="text" name="tickets" ></th>
+            </tr>
+        </tfoot>
+    </table>
+    <button>Previous</button>
+    <button>Next</button>
+    <button type="submit" form="spectacle_form" id="addNewSpectacle">Add a new Spectacle</button>
+
+<script>
+    'use strict';
+
+    class SpectacleModel {
+
+        constructor() {
+        }
+
+        async getSpectacles() {
+            const baseUrl = location.origin;
+            const url = baseUrl + "/GetPerformances";
+            let response = await fetch(url);
+            let spectacles = await response.json();
+            return spectacles;
+        }
+    }
+
+    class SpectacleViewModel {
+        name;
+        size;
+        spectacles;
+
+        constructor(name, size, spectacles) {
+            this.name = name;
+            this.size = size;
+            this.spectacles = spectacles;
+        }
+    }
+
+    //TODO: Add The URL Routing (Use The History API).
+
+    class SpectacleController {
+        //TODO: Add Activate and Deactivate methods for switch around different controllers (table/edit views)
+
+        constructor(spectacleView, spectacleModel) {
+            this.spectacleView = spectacleView;
+            this.spectacleModel = spectacleModel;
+            this.spectacleView.spectaclesTableClickHandler = this.onClickGetSpectacle.bind(this);
+        }
+
+        onClickGetSpectacle(e) {
+            let target = e.currentTarget;
+            let index = parseInt(target.dataset.SpectacleIndex, 10);
+
+            this.spectacleModel.getSpectacles(index, this.showSpectacles.bind(this));
+        }
+
+        async showSpectacles() {
+            let spectacles = await this.spectacleModel.getSpectacles();
+            let spectacleViewModel = new SpectacleViewModel(
+                null,
+                null,
+                spectacles
+            );
+
+            // spectacleViewModel.previousIndex = spectacleModelData.index - 1;
+            // spectacleViewModel.nextIndex = spectacleModelData.index + 1;
+
+            // if (spectacleModelData.index === 0) {
+            //     spectacleViewModel.previousIndex = spectacleModelData.count - 1;
+            // }
+
+            // if (spectacleModelData.index === spectacleModelData.count - 1) {
+            //     spectacleViewModel.nextIndex = 0;
+            // }
+
+            this.spectacleView.render(spectacleViewModel);
+        }
+    }
+
+    class SpectacleView {
+        tableTagId;
+        spectaclesTableClickHandler = null;
+
+        constructor(tableTagId) {
+            this.tableTagId = tableTagId;
+        }
+
+        render(spectacleViewModel)
+        {
+            let newTbody = document.createElement('tbody');
+
+            let bodyString = spectacleViewModel.spectacles.map(function (spectacle) {
+                const markupRow = `
+<tr>
+        <td>${spectacle.id}</td>
+        <td>${spectacle.name}</td>
+        <td>${new Date(spectacle.startDataTime).toLocaleDateString()}, ${new Date(spectacle.startDataTime).getHours()}:${new Date(spectacle.startDataTime).getMinutes()} - ${new Date(spectacle.endDataTime).getHours()}:${new Date(spectacle.endDataTime).getMinutes()}</td>
+        <td class='numbers'>${spectacle.availableTickets}</td>
+</tr>\n
+`;
+                return markupRow;
+            }).join('');
+
+            newTbody.innerHTML = bodyString;
+
+            let spectaclesTable = document.querySelector(this.tableTagId);
+            let tbodyRef = spectaclesTable.getElementsByTagName('tbody')[0];
+            tbodyRef.parentNode.replaceChild(newTbody, tbodyRef);
+
+            spectaclesTable.addEventListener('click', this.spectaclesTableClickHandler);
+        }
+    }
+
+    
+    
+
+
+    let spectacleView = new SpectacleView('#spectaclesTable');
+    let spectacleModel = new SpectacleModel();
+    let spectacleController = new SpectacleController(spectacleView, spectacleModel);
+
+    (async () => {
+        // document.querySelector("#addNewSpectacle").addEventListener('click', addNewSpectacleHandler);
+        await spectacleController.showSpectacles();
+    })();
+</script>
+</body>
+</html>

@@ -1,0 +1,19 @@
+@apiUri = http://localhost:62118
+
+# @name loginAdmin
+POST {{apiUri}}/api/auth/token
+Content-Type: application/json
+
+{
+  "email": "admin@f4ntec.com",
+  "password": "1234"
+}
+
+###
+
+# @name GetPerformances
+GET {{apiUri}}/GetPerformances
+##Authorization: Bearer {{login.response.body.accessToken}}
+Content-Type: application/json
+
+###
