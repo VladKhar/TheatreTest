@@ -1,1 +1,1 @@
-# Client side starts from `f4ntec\wwwroot\`
+# Client side starts from `f4ntec\wwwroot\index.html`
