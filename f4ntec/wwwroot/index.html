@@ -16,7 +16,7 @@
         <tr>
             <th data-header-name="id">Id</th>
             <th data-header-name="name">Name</th>
-            <th data-header-name="time">Time</th>
+            <th data-header-name="time">Time (duration h:m)</th>
             <th data-header-name="tickets">Tickets</th>
         </tr>
         </thead>
@@ -26,29 +26,49 @@
             <tr>
                 <th><input type="hidden" name="id" ></th>
                 <th><input type="text" name="name" ></th>
-                <th><input type="text" name="time" ></th>
+                <th><input type="text" name="time" ><input type="text" name="duration" ></th>
                 <th><input type="text" name="tickets" ></th>
             </tr>
         </tfoot>
     </table>
     <button>Previous</button>
     <button>Next</button>
-    <button type="submit" form="spectacle_form" id="addNewSpectacle">Add a new Spectacle</button>
+    <button type="submit" id="addNewSpectacle">Add a new Spectacle</button>
 
 <script>
     'use strict';
 
     class SpectacleModel {
+        baseUrl;
 
-        constructor() {
+        constructor(baseUrl) {
+            this.baseUrl = baseUrl;
         }
 
         async getSpectacles() {
-            const baseUrl = location.origin;
-            const url = baseUrl + "/GetPerformances";
+            const url = this.baseUrl + "/Theatre";
             let response = await fetch(url);
             let spectacles = await response.json();
             return spectacles;
+        }
+
+        async addSpectacle(name, availableTickets, startDateTime, duration)
+        {
+            let spectacle = {
+                "name": name,
+                "availableTickets": availableTickets,
+                "startDateTime": startDateTime,
+                "duration":duration
+            };
+
+            const url = this.baseUrl + "/Theatre/";
+            let response = await fetch(url, {
+                'method': 'POST',
+                'headers': { 'Content-Type': 'application/json;charset=utf-8' },
+                'body': JSON.stringify(spectacle)
+            });
+
+            var result = await response.text();
         }
     }
 
@@ -73,6 +93,7 @@
             this.spectacleView = spectacleView;
             this.spectacleModel = spectacleModel;
             this.spectacleView.spectaclesTableClickHandler = this.onClickGetSpectacle.bind(this);
+            this.spectacleView.addNewSpectacleClickHandler = this.onClickAddNewSpectacle.bind(this);
         }
 
         onClickGetSpectacle(e) {
@@ -80,6 +101,12 @@
             let index = parseInt(target.dataset.SpectacleIndex, 10);
 
             this.spectacleModel.getSpectacles(index, this.showSpectacles.bind(this));
+        }
+
+        onClickAddNewSpectacle(e)
+        {
+            debugger
+            this.spectacleModel.addSpectacle("add new", 20, "2020-05-06T20:56:06.235Z", "1:45");
         }
 
         async showSpectacles() {
@@ -108,13 +135,31 @@
     class SpectacleView {
         tableTagId;
         spectaclesTableClickHandler = null;
+        addNewSpectacleElement;
+        addNewSpectacleClickHandler = null;
 
-        constructor(tableTagId) {
+        constructor(tableTagId, addNewSpectacleId) {
             this.tableTagId = tableTagId;
+            this.addNewSpectacleElement = document.querySelector(addNewSpectacleId);
+
+            let self = this;
+            this.addNewSpectacleElement.addEventListener('click', function (e) {
+                if (self.addNewSpectacleClickHandler)
+                {
+                    self.addNewSpectacleClickHandler(e)
+                }
+            });
         }
 
         render(spectacleViewModel)
         {
+            function formatSpectacleDate(spectacle)
+            {
+                let result = new Date(spectacle.startDateTime).toLocaleDateString()
+                    + ` (${spectacle.duration.hours}:${spectacle.duration.minutes})`;
+
+                return result;
+            }
             let newTbody = document.createElement('tbody');
 
             let bodyString = spectacleViewModel.spectacles.map(function (spectacle) {
@@ -122,7 +167,7 @@
 <tr>
         <td>${spectacle.id}</td>
         <td>${spectacle.name}</td>
-        <td>${new Date(spectacle.startDataTime).toLocaleDateString()}, ${new Date(spectacle.startDataTime).getHours()}:${new Date(spectacle.startDataTime).getMinutes()} - ${new Date(spectacle.endDataTime).getHours()}:${new Date(spectacle.endDataTime).getMinutes()}</td>
+        <td>${formatSpectacleDate(spectacle)}</td>
         <td class='numbers'>${spectacle.availableTickets}</td>
 </tr>\n
 `;
@@ -143,8 +188,8 @@
     
 
 
-    let spectacleView = new SpectacleView('#spectaclesTable');
-    let spectacleModel = new SpectacleModel();
+    let spectacleView = new SpectacleView('#spectaclesTable', '#addNewSpectacle');
+    let spectacleModel = new SpectacleModel(location.origin);
     let spectacleController = new SpectacleController(spectacleView, spectacleModel);
 
     (async () => {

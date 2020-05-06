@@ -11,9 +11,32 @@ Content-Type: application/json
 
 ###
 
-# @name GetPerformances
-GET {{apiUri}}/GetPerformances
+# @name GetPerformances 
+GET {{apiUri}}/theatre/
 ##Authorization: Bearer {{login.response.body.accessToken}}
 Content-Type: application/json
+
+###
+
+# @name GetPerformance
+GET {{apiUri}}/theatre/1
+##Authorization: Bearer {{login.response.body.accessToken}}
+Content-Type: application/json
+
+
+###
+
+# @name AddPerformance
+POST {{apiUri}}/theatre/
+##Authorization: Bearer {{login.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "name": "add new spectacle by vs code http",
+  "availableTickets": 400,
+  "startDateTime": "2020-05-06T20:56:06.235Z", 
+  //"duration": "PT2H25M"
+  "duration": "2:30"
+}
 
 ###

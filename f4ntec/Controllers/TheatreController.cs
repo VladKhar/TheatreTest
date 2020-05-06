@@ -14,31 +14,55 @@ namespace f4ntec.Controllers
     {
 
         private readonly ILogger<TheatreController> _logger;
+        private static IList<Spectacle> spectacles;
+
+        static TheatreController()
+        {
+            DateTime curentDate = DateTime.Now;
+            spectacles = Enumerable.Range(1, 5).Select(index => new Spectacle
+            {
+                Id = index,
+                Name = "name" + index,
+                AvailableTickets = index * 10,
+                StartDateTime = curentDate.AddHours(index),
+                Duration = curentDate.AddHours(index * 1.5) - curentDate.AddHours(index)
+            }).ToList();
+        }
+
 
         public TheatreController(ILogger<TheatreController> logger)
         {
             _logger = logger;
         }
 
-        [HttpGet("~/GetPerformances")]
+        [HttpGet]
         public IEnumerable<Spectacle> GetPerformances()
         {
-            DateTime curentDate = DateTime.Now;
-            return Enumerable.Range(1, 5).Select(index => new Spectacle
-            {
-                Id = index,
-                Name = "name"+index,
-                AvailableTickets = index*10,
-                StartDataTime = curentDate.AddHours(index),
-                EndDataTime = curentDate.AddHours(index*1.5)
-            })
-            .ToArray();
+            return spectacles;
+        }
+
+        [HttpGet("{id}")]
+        public Spectacle GetPerformance(int id)
+        {
+            return spectacles.Single(s => s.Id == id);
         }
 
         [HttpPost]
-        public void CreateSpectacle([FromForm]SpectacleCreateDto spectacle)
+        public IActionResult CreatePerformance([FromBody]SpectacleCreateDto spectacleDto)
         {
+            var newId = spectacles.Count + 1;
 
+            var spectacle = new Spectacle()
+            {
+                Id = newId,
+                Name = spectacleDto.Name,
+                AvailableTickets = spectacleDto.AvailableTickets,
+                StartDateTime = spectacleDto.StartDateTime,
+                Duration = TimeSpan.Parse(spectacleDto.Duration)
+            };
+            spectacles.Add(spectacle);
+
+            return CreatedAtAction(nameof(GetPerformance), new {id = newId}, spectacle);
         }
 
     }

@@ -10,15 +10,15 @@ namespace f4ntec.Model
         public int Id { get; set; }
         public string Name { get; set; }
         public int AvailableTickets { get; set; }
-        public DateTime StartDataTime { get; set; }
-        public DateTime EndDataTime { get; set; }
+        public DateTime StartDateTime { get; set; }
+        public TimeSpan Duration { get; set; }
     }
     public class SpectacleCreateDto
     {
         public string Name { get; set; }
         public int AvailableTickets { get; set; }
-        public DateTime StartDataTime { get; set; }
-        public DateTime EndDataTime { get; set; }
+        public DateTime StartDateTime { get; set; }
+        public string Duration { get; set; }
     }
 
     public class TicketBalance
