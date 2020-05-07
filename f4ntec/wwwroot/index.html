@@ -103,10 +103,10 @@
             this.spectacleModel.getSpectacles(index, this.showSpectacles.bind(this));
         }
 
-        onClickAddNewSpectacle(e)
+        onClickAddNewSpectacle(e, id, name, time, duration, tickets)
         {
-            debugger
-            this.spectacleModel.addSpectacle("add new", 20, "2020-05-06T20:56:06.235Z", "1:45");
+            let promise = this.spectacleModel.addSpectacle(name, parseInt(tickets), new Date(time), duration);
+            promise.then(()=> this.showSpectacles());
         }
 
         async showSpectacles() {
@@ -133,20 +133,26 @@
     }
 
     class SpectacleView {
-        tableTagId;
         spectaclesTableClickHandler = null;
-        addNewSpectacleElement;
         addNewSpectacleClickHandler = null;
+        addNewSpectacleElement;
+        spectaclesTable;
 
-        constructor(tableTagId, addNewSpectacleId) {
-            this.tableTagId = tableTagId;
-            this.addNewSpectacleElement = document.querySelector(addNewSpectacleId);
+        constructor(tableTagId, addNewSpectacleTagId) {
+            this.addNewSpectacleElement = document.querySelector(addNewSpectacleTagId);
+            this.spectaclesTable = document.querySelector(tableTagId);
 
             let self = this;
             this.addNewSpectacleElement.addEventListener('click', function (e) {
                 if (self.addNewSpectacleClickHandler)
                 {
-                    self.addNewSpectacleClickHandler(e)
+                    let id = spectaclesTable.querySelector('tfoot input[name="id"]').value;
+                    let name = spectaclesTable.querySelector('tfoot input[name="name"]').value;
+                    let time = spectaclesTable.querySelector('tfoot input[name="time"]').value;
+                    let duration = spectaclesTable.querySelector('tfoot input[name="duration"]').value;
+                    let tickets = spectaclesTable.querySelector('tfoot input[name="tickets"]').value;
+
+                    self.addNewSpectacleClickHandler(e, id, name, time, duration, tickets);
                 }
             });
         }
@@ -176,7 +182,7 @@
 
             newTbody.innerHTML = bodyString;
 
-            let spectaclesTable = document.querySelector(this.tableTagId);
+
             let tbodyRef = spectaclesTable.getElementsByTagName('tbody')[0];
             tbodyRef.parentNode.replaceChild(newTbody, tbodyRef);
 
@@ -184,16 +190,11 @@
         }
     }
 
-    
-    
-
-
     let spectacleView = new SpectacleView('#spectaclesTable', '#addNewSpectacle');
     let spectacleModel = new SpectacleModel(location.origin);
     let spectacleController = new SpectacleController(spectacleView, spectacleModel);
 
     (async () => {
-        // document.querySelector("#addNewSpectacle").addEventListener('click', addNewSpectacleHandler);
         await spectacleController.showSpectacles();
     })();
 </script>
