@@ -13,7 +13,7 @@ namespace f4ntec.Model
         public DateTime StartDateTime { get; set; }
         public TimeSpan Duration { get; set; }
     }
-    public class SpectacleCreateDto
+    public class SpectacleDto
     {
         public string Name { get; set; }
         public int AvailableTickets { get; set; }

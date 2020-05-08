@@ -24,16 +24,17 @@
         </tbody>
         <tfoot>
             <tr>
-                <th><input type="hidden" name="id" ></th>
-                <th><input type="text" name="name" ></th>
-                <th><input type="text" name="time" ><input type="text" name="duration" ></th>
-                <th><input type="text" name="tickets" ></th>
+                <th><input type="text" name="id" readonly onfocus="this.blur();"></th>
+                <th><input type="text" name="name" placeholder="Your name"></th>
+                <th><input type="datetime-local" name="time" placeholder="2020-05-15 14:35"><input type="text" name="duration" placeholder="1:25"></th>
+                <th><input type="text" name="tickets" placeholder="323"></th>
             </tr>
         </tfoot>
     </table>
     <button>Previous</button>
     <button>Next</button>
     <button type="submit" id="addNewSpectacle">Add a new Spectacle</button>
+    <button type="submit" id="updateSpectacle">Update Spectacle</button>
 
 <script>
     'use strict';
@@ -54,6 +55,11 @@
 
         async addSpectacle(name, availableTickets, startDateTime, duration)
         {
+            let result = await this.updateSpectacle("", name, availableTickets, startDateTime, duration, 'POST');
+        }
+
+        async updateSpectacle(id, name, availableTickets, startDateTime, duration, method = 'PUT')
+        {
             let spectacle = {
                 "name": name,
                 "availableTickets": availableTickets,
@@ -61,14 +67,14 @@
                 "duration":duration
             };
 
-            const url = this.baseUrl + "/Theatre/";
+            const url = this.baseUrl + "/Theatre/"+id;
             let response = await fetch(url, {
-                'method': 'POST',
+                'method': method,
                 'headers': { 'Content-Type': 'application/json;charset=utf-8' },
                 'body': JSON.stringify(spectacle)
             });
 
-            var result = await response.text();
+            let result = await response.text();
         }
     }
 
@@ -92,20 +98,19 @@
         constructor(spectacleView, spectacleModel) {
             this.spectacleView = spectacleView;
             this.spectacleModel = spectacleModel;
-            this.spectacleView.spectaclesTableClickHandler = this.onClickGetSpectacle.bind(this);
             this.spectacleView.addNewSpectacleClickHandler = this.onClickAddNewSpectacle.bind(this);
-        }
-
-        onClickGetSpectacle(e) {
-            let target = e.currentTarget;
-            let index = parseInt(target.dataset.SpectacleIndex, 10);
-
-            this.spectacleModel.getSpectacles(index, this.showSpectacles.bind(this));
+            this.spectacleView.updateSpectacleClickHandler = this.onClickUpdateSpectacle.bind(this);
         }
 
         onClickAddNewSpectacle(e, id, name, time, duration, tickets)
         {
             let promise = this.spectacleModel.addSpectacle(name, parseInt(tickets), new Date(time), duration);
+            promise.then(()=> this.showSpectacles());
+        }
+
+        onClickUpdateSpectacle(e, id, name, time, duration, tickets)
+        {
+            let promise = this.spectacleModel.updateSpectacle(id, name, parseInt(tickets), new Date(time), duration)
             promise.then(()=> this.showSpectacles());
         }
 
@@ -133,36 +138,78 @@
     }
 
     class SpectacleView {
-        spectaclesTableClickHandler = null;
-        addNewSpectacleClickHandler = null;
+        addNewSpectacleClickHandler;
+        updateSpectacleClickHandler;
         addNewSpectacleElement;
+        updateSpectacleElement;
         spectaclesTable;
 
-        constructor(tableTagId, addNewSpectacleTagId) {
+        constructor(tableTagId, addNewSpectacleTagId, updateSpectacleTagId) {
             this.addNewSpectacleElement = document.querySelector(addNewSpectacleTagId);
+            this.updateSpectacleElement = document.querySelector(updateSpectacleTagId);
+
             this.spectaclesTable = document.querySelector(tableTagId);
 
+            this.idInput = this.spectaclesTable.querySelector('tfoot input[name="id"]');
+            this.nameInput = this.spectaclesTable.querySelector('tfoot input[name="name"]');
+            this.timeInput = this.spectaclesTable.querySelector('tfoot input[name="time"]');
+            this.durationInput = this.spectaclesTable.querySelector('tfoot input[name="duration"]');
+            this.ticketsInput = this.spectaclesTable.querySelector('tfoot input[name="tickets"]');
+
             let self = this;
+
+            this.spectaclesTable.addEventListener('click', function (e) {
+                let target = e.currentTarget;
+                //let index = parseInt(target.dataset.SpectacleIndex, 10);
+                //let rowIndex = e.target.parentElement.rowIndex;
+                let row = e.target.parentElement;
+
+                self.idInput.value = row.children[0].childNodes[0].nodeValue;// "11"
+                self.nameInput.value = row.children[1].childNodes[0]?.nodeValue ?? "";// "Vladimir2"
+                let timeAndDuration = row.children[2].childNodes[0].nodeValue;// "05.08.2020 4:19 (0:06)"
+                let parts = timeAndDuration.split(" ");
+                let strTime = `${parts[0]} ${parts[1]}`;
+                let dateTime = new Date(strTime).toISOString().substr(0,16);
+                self.timeInput.value = dateTime;
+                self.durationInput.value = parts[2].slice(1, -1);
+                self.ticketsInput.value = row.children[3].childNodes[0].nodeValue;// "123"
+            });
+
             this.addNewSpectacleElement.addEventListener('click', function (e) {
-                if (self.addNewSpectacleClickHandler)
-                {
-                    let id = spectaclesTable.querySelector('tfoot input[name="id"]').value;
-                    let name = spectaclesTable.querySelector('tfoot input[name="name"]').value;
-                    let time = spectaclesTable.querySelector('tfoot input[name="time"]').value;
-                    let duration = spectaclesTable.querySelector('tfoot input[name="duration"]').value;
-                    let tickets = spectaclesTable.querySelector('tfoot input[name="tickets"]').value;
+                if (self.addNewSpectacleClickHandler) {
+                    let id = self.idInput.value;
+                    let name = self.nameInput.value;
+                    let time = self.timeInput.value;
+                    let duration = self.durationInput.value;
+                    let tickets = self.ticketsInput.value;
 
                     self.addNewSpectacleClickHandler(e, id, name, time, duration, tickets);
                 }
             });
+
+            this.updateSpectacleElement.addEventListener('click', function (e) {
+                if (self.updateSpectacleClickHandler) {
+                    let id = self.idInput.value;
+                    let name = self.nameInput.value;
+                    let time = self.timeInput.value;
+                    let duration = self.durationInput.value;
+                    let tickets = self.ticketsInput.value;
+                    self.updateSpectacleClickHandler(e, id, name, time, duration, tickets)
+                }
+            })
         }
 
         render(spectacleViewModel)
         {
             function formatSpectacleDate(spectacle)
             {
-                let result = new Date(spectacle.startDateTime).toLocaleDateString()
-                    + ` (${spectacle.duration.hours}:${spectacle.duration.minutes})`;
+                let startDateTime = new Date(spectacle.startDateTime);
+                let startDateTimeMinutes = Number(startDateTime.getMinutes()).toString().padStart(2,"0");
+                let durationMinutes = Number(spectacle.duration.minutes).toString().padStart(2,"0");
+
+                let result = startDateTime.toLocaleDateString()
+                        + ` ${startDateTime.getHours()}:${startDateTimeMinutes}`
+                        + ` (${spectacle.duration.hours}:${durationMinutes})`;
 
                 return result;
             }
@@ -182,15 +229,12 @@
 
             newTbody.innerHTML = bodyString;
 
-
             let tbodyRef = spectaclesTable.getElementsByTagName('tbody')[0];
             tbodyRef.parentNode.replaceChild(newTbody, tbodyRef);
-
-            spectaclesTable.addEventListener('click', this.spectaclesTableClickHandler);
         }
     }
 
-    let spectacleView = new SpectacleView('#spectaclesTable', '#addNewSpectacle');
+    let spectacleView = new SpectacleView('#spectaclesTable', '#addNewSpectacle', '#updateSpectacle');
     let spectacleModel = new SpectacleModel(location.origin);
     let spectacleController = new SpectacleController(spectacleView, spectacleModel);
 

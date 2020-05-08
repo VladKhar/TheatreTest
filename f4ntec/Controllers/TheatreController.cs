@@ -48,7 +48,7 @@ namespace f4ntec.Controllers
         }
 
         [HttpPost]
-        public IActionResult CreatePerformance([FromBody]SpectacleCreateDto spectacleDto)
+        public IActionResult CreatePerformance([FromBody]SpectacleDto spectacleDto)
         {
             var newId = spectacles.Count + 1;
 
@@ -65,5 +65,25 @@ namespace f4ntec.Controllers
             return CreatedAtAction(nameof(GetPerformance), new {id = newId}, spectacle);
         }
 
+        [HttpPut("{id}")]
+        public IActionResult UpdatePerformance(int id, [FromBody]SpectacleDto spectacleDto)
+        {
+            Spectacle spectacle = null;
+            try
+            {
+                spectacle = spectacles.Single(s => s.Id == id);
+            }
+            catch
+            {
+                return NotFound();
+            }
+
+            spectacle.Name = spectacleDto.Name;
+            spectacle.AvailableTickets = spectacleDto.AvailableTickets;
+            spectacle.StartDateTime = spectacleDto.StartDateTime;
+            spectacle.Duration = TimeSpan.Parse(spectacleDto.Duration);
+
+            return NoContent();
+        }
     }
 }

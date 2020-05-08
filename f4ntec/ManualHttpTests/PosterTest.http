@@ -40,3 +40,20 @@ Content-Type: application/json
 }
 
 ###
+
+# @name UpdatePerformance
+PUT {{apiUri}}/theatre/1
+//{{AddPerformance.response.body.id}}
+##Authorization: Bearer {{login.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "name": "name changed by vs code http",
+  "availableTickets": 333,
+  "startDateTime": "2020-02-12T20:56:06.235Z", 
+  //"duration": "PT2H25M"
+  "duration": "3:15"
+}
+
+###
+
